@@ -131,10 +131,18 @@ class DepthRenderer(private val context: Context) {
         c.scale(s, s, w / 2, h / 2)
         c.drawBitmap(bg, null, dst, layerPaint)
         c.restore()
-        if (showClock && !clockFront) drawClock(c, w, h)
+        // The clock turns with the plane it sits on: the background's when behind the person, the person's when in front.
+        if (showClock && !clockFront) drawClockOn(c, view, w, h)
         val turn = prefs.getInt(Layers.KEY_SUBJECT_TURN, Layers.DEFAULT_SUBJECT_TURN) / 100f
         drawSubject(c, w, h, s, subject, tiltX * maxDeg * turn, tiltY * maxDeg * PITCH_SHARE * turn)
-        if (showClock && clockFront) drawClock(c, w, h)
+        if (showClock && clockFront) drawClockOn(c, planeAt, w, h)
+    }
+
+    private fun drawClockOn(c: Canvas, plane: Matrix, w: Float, h: Float) {
+        c.save()
+        c.concat(plane)
+        drawClock(c, w, h)
+        c.restore()
     }
 
     /**

@@ -49,7 +49,7 @@ class PreviewView(context: Context, attrs: AttributeSet?) : View(context, attrs)
         if (isVisible) {
             renderer.loadIfChanged()
             tilt.reset()
-            rotationSensor?.let { sensors.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
+            rotationSensor?.let { sensors.registerListener(this, it, TiltTracker.SAMPLING_PERIOD_US) }
             prefs.registerOnSharedPreferenceChangeListener(this)
             invalidate()
         } else {
