@@ -11,6 +11,7 @@ import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
 import android.graphics.RectF
 import android.net.Uri
+import android.util.Log
 import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.segmentation.Segmentation
@@ -65,7 +66,7 @@ object Layers {
             segmenter.close()
         }
         val mask = maskBitmap(result.buffer, result.width, result.height, photo.width, photo.height)
-        save(fillBehind(photo, mask), bgFile(context), Bitmap.CompressFormat.JPEG)
+        save(fillBehind(context, photo, mask), bgFile(context), Bitmap.CompressFormat.JPEG)
         save(cutOut(photo, mask), subjectFile(context), Bitmap.CompressFormat.PNG)
         // The wallpaper service listens for this key and reloads the files.
         prefs(context).edit().putLong(KEY_VERSION, System.currentTimeMillis()).apply()
@@ -108,14 +109,21 @@ object Layers {
     }
 
     /**
-     * Fills the person's spot with the colors around its edge: the person (mask grown a little) is cut
-     * away, then the hole is filled smoothly from the surrounding background.
+     * Fills the person's spot: the person (mask grown a little) is cut away, the hole is first filled
+     * smoothly from the surrounding colors, then the inpainting model paints real texture into it.
+     * If the model fails on this device, the smooth fill is used as is.
      */
-    // shortcut: smooth color fill only; patterns and straight lines do not continue into the hole.
-    private fun fillBehind(photo: Bitmap, mask: Bitmap): Bitmap {
+    private fun fillBehind(context: Context, photo: Bitmap, mask: Bitmap): Bitmap {
+        val grown = grow(mask, 14f * photo.height / 1950f)
         val known = photo.copy(Bitmap.Config.ARGB_8888, true)
-        Canvas(known).drawBitmap(grow(mask, 14f * photo.height / 1950f), 0f, 0f, porterDuff(PorterDuff.Mode.DST_OUT))
-        return pushPull(known)
+        Canvas(known).drawBitmap(grown, 0f, 0f, porterDuff(PorterDuff.Mode.DST_OUT))
+        val smooth = pushPull(known)
+        return try {
+            Inpainter.fill(context, smooth, grown)
+        } catch (e: Exception) {
+            Log.w("DerinlikSaati", "Inpainting failed, using the smooth fill", e)
+            smooth
+        }
     }
 
     /**
