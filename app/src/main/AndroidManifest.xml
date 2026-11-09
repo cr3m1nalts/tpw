@@ -18,6 +18,16 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".MaskEditActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".ClockEditActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
         <service
             android:name=".DepthWallpaperService"
             android:exported="true"

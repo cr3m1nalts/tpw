@@ -1,0 +1,264 @@
+package com.derinliksaati
+
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapShader
+import android.graphics.BlurMaskFilter
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Matrix
+import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.RectF
+import android.graphics.RuntimeShader
+import android.graphics.Shader
+import android.graphics.Typeface
+import android.os.Build
+import android.text.format.DateFormat
+import androidx.annotation.RequiresApi
+import java.text.SimpleDateFormat
+import java.util.Date
+import kotlin.math.min
+import kotlin.math.sqrt
+
+/**
+ * Draws the clock in its user-set box, in one of three styles. Text is laid out once in fixed "design units"
+ * and the canvas is scaled to the box, so the box can be any shape (non-proportional resize just stretches it).
+ */
+class ClockDrawer(private val context: Context) {
+
+    private val prefs = Layers.prefs(context)
+    private val bold = Typeface.create("sans-serif-condensed", Typeface.BOLD)
+    private val regular = Typeface.create("sans-serif-condensed", Typeface.NORMAL)
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+    private val fill = Paint(Paint.FILTER_BITMAP_FLAG)
+    private val digit = Rect()
+
+    private var key = ""
+    private var lines: List<String> = emptyList()
+    private var date = ""
+    private var vertical = false
+    private var naturalW = 1f
+    private var naturalH = 1f
+    private var digitH = 1f
+
+    private val box = RectF()
+    private val local = Matrix()
+    private val source = RectF()
+
+    private var bgSource: Bitmap? = null
+    private var bgShader: BitmapShader? = null
+    private var blurSource: Bitmap? = null
+    private var blurShader: BitmapShader? = null
+    private var sharpShader: BitmapShader? = null // text shape, rebuilt when the text changes
+    private var softShader: BitmapShader? = null  // blurred text shape: its slope gives the glass edge
+    private val liquid = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) LiquidEffect() else null
+
+    /** Rebuilds the text and its layout only when the minute, the language or the layout changes (date formatting is slow). */
+    private fun refreshText() {
+        val locale = Layers.locale(context)
+        val is24 = DateFormat.is24HourFormat(context)
+        val isVertical = prefs.getBoolean(Layers.KEY_CLOCK_VERTICAL, false)
+        val k = "${System.currentTimeMillis() / 60_000}|$locale|$is24|$isVertical"
+        if (k == key) return
+        key = k
+        vertical = isVertical
+        val now = Date()
+        lines = if (isVertical) {
+            listOf(DateFormat.format(if (is24) "HH" else "hh", now).toString(), DateFormat.format("mm", now).toString())
+        } else {
+            listOf(DateFormat.format(if (is24) "HH:mm" else "h:mm", now).toString())
+        }
+        date = SimpleDateFormat(DateFormat.getBestDateTimePattern(locale, "EEEEdMMMM"), locale).format(now)
+        paint.typeface = bold
+        paint.textSize = TIME_SIZE
+        paint.getTextBounds("0", 0, 1, digit)
+        digitH = digit.height().toFloat()
+        // Measured on zeros, not the real digits, so the clock does not change width from minute to minute.
+        naturalW = paint.measureText(if (isVertical) "00" else "00:00")
+        naturalH = DATE_H + GAP + lines.size * digitH + (lines.size - 1) * LINE_GAP
+        sharpShader = null
+        softShader = null
+    }
+
+    /** The clock's box on a w×h screen: the user's, or the default for the current layout. */
+    fun box(w: Float, h: Float, out: RectF) {
+        refreshText()
+        val l = prefs.getFloat(Layers.KEY_CLOCK_L, Float.NaN)
+        if (!l.isNaN()) {
+            val t = prefs.getFloat(Layers.KEY_CLOCK_T, 0f)
+            out.set(l * w, t * h, (l + prefs.getFloat(Layers.KEY_CLOCK_W, 0.5f)) * w, (t + prefs.getFloat(Layers.KEY_CLOCK_H, 0.2f)) * h)
+            return
+        }
+        var bw = w * if (vertical) 0.55f else 0.91f
+        var bh = bw * naturalH / naturalW
+        if (bh > h * 0.7f) {
+            bw *= h * 0.7f / bh
+            bh = h * 0.7f
+        }
+        val top = h * 0.10f
+        out.set((w - bw) / 2, top, (w + bw) / 2, top + bh)
+    }
+
+    /** [bgRect] is where [bg] and [blur] sit on screen; without them the glass styles fall back to classic. */
+    fun draw(c: Canvas, w: Float, h: Float, bg: Bitmap?, blur: Bitmap?, bgRect: RectF?, tiltX: Float, tiltY: Float) {
+        val alpha = prefs.getInt(Layers.KEY_CLOCK_ALPHA, Layers.DEFAULT_CLOCK_ALPHA) * 255 / 100
+        if (alpha == 0) return
+        box(w, h, box)
+        val style = prefs.getInt(Layers.KEY_CLOCK_STYLE, Layers.STYLE_CLASSIC)
+        c.save()
+        c.translate(box.left, box.top)
+        c.scale(box.width() / naturalW, box.height() / naturalH)
+        when {
+            style == Layers.STYLE_LIQUID && bg != null && bgRect != null && liquid != null ->
+                drawLiquid(c, bg, bgRect, alpha, tiltX, tiltY)
+            style != Layers.STYLE_CLASSIC && blur != null && bgRect != null -> drawFrosted(c, blur, bgRect, alpha)
+            else -> drawClassic(c, alpha)
+        }
+        c.restore()
+    }
+
+    private fun drawText(c: Canvas, p: Paint) {
+        p.typeface = regular
+        p.textSize = DATE_SIZE
+        val dw = p.measureText(date)
+        if (dw > naturalW) p.textSize = DATE_SIZE * naturalW / dw
+        c.drawText(date, naturalW / 2, DATE_H * 0.8f, p)
+        p.typeface = bold
+        p.textSize = TIME_SIZE
+        var y = DATE_H + GAP + digitH
+        for (line in lines) {
+            c.drawText(line, naturalW / 2, y, p)
+            y += digitH + LINE_GAP
+        }
+    }
+
+    private fun drawClassic(c: Canvas, alpha: Int) {
+        paint.shader = null
+        paint.style = Paint.Style.FILL
+        paint.color = Color.argb(alpha, 255, 255, 255)
+        paint.setShadowLayer(32f, 0f, 0f, Color.argb(alpha * 89 / 255, 20, 10, 40))
+        drawText(c, paint)
+        paint.clearShadowLayer()
+    }
+
+    /** Maps a picture placed at [rect] on screen into the design units this clock draws in. */
+    private fun place(shader: Shader, bitmap: Bitmap, rect: RectF) {
+        source.set(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat())
+        local.setRectToRect(source, rect, Matrix.ScaleToFit.FILL)
+        local.postTranslate(-box.left, -box.top)
+        local.postScale(naturalW / box.width(), naturalH / box.height())
+        shader.setLocalMatrix(local)
+    }
+
+    /** The digits show a blurred copy of the background with a white tint and a thin bright outline. */
+    private fun drawFrosted(c: Canvas, blur: Bitmap, rect: RectF, alpha: Int) {
+        if (blurSource !== blur) {
+            blurSource = blur
+            blurShader = BitmapShader(blur, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+        }
+        val shader = blurShader ?: return
+        place(shader, blur, rect)
+        paint.style = Paint.Style.FILL
+        paint.color = Color.argb(alpha, 255, 255, 255)
+        paint.shader = shader
+        drawText(c, paint)
+        paint.shader = null
+        paint.color = Color.argb(alpha * 70 / 255, 255, 255, 255)
+        drawText(c, paint)
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = 3f
+        paint.color = Color.argb(alpha * 140 / 255, 255, 255, 255)
+        drawText(c, paint)
+        paint.style = Paint.Style.FILL
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun drawLiquid(c: Canvas, bg: Bitmap, rect: RectF, alpha: Int, tiltX: Float, tiltY: Float) {
+        val effect = liquid ?: return
+        if (sharpShader == null) {
+            sharpShader = BitmapShader(textShape(0f), Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+            softShader = BitmapShader(textShape(SOFT_RADIUS), Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+        }
+        if (bgSource !== bg) {
+            bgSource = bg
+            bgShader = BitmapShader(bg, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+        }
+        val background = bgShader ?: return
+        place(background, bg, rect)
+        // The highlight slides around the digit edges as the phone tilts.
+        var lx = tiltX - 0.35f
+        var ly = tiltY - 0.8f
+        val len = sqrt(lx * lx + ly * ly).coerceAtLeast(0.001f)
+        lx /= len
+        ly /= len
+        fill.shader = effect.bind(background, sharpShader ?: return, softShader ?: return, lx, ly, alpha / 255f)
+        c.drawRect(0f, 0f, naturalW, naturalH, fill)
+        fill.shader = null
+    }
+
+    private fun textShape(blurRadius: Float): Bitmap {
+        val b = Bitmap.createBitmap(naturalW.toInt().coerceAtLeast(1), naturalH.toInt().coerceAtLeast(1), Bitmap.Config.ARGB_8888)
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            textAlign = Paint.Align.CENTER
+            color = Color.BLACK
+            if (blurRadius > 0f) maskFilter = BlurMaskFilter(blurRadius, BlurMaskFilter.Blur.NORMAL)
+        }
+        drawText(Canvas(b), p)
+        return b
+    }
+
+    /** Bends the background at the digit edges like thick glass and adds a highlight. Needs Android 13's shaders. */
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private class LiquidEffect {
+        private val shader = RuntimeShader(AGSL)
+
+        fun bind(bg: BitmapShader, sharp: BitmapShader, soft: BitmapShader, lx: Float, ly: Float, alpha: Float): RuntimeShader {
+            for (s in listOf(bg, sharp, soft)) s.filterMode = BitmapShader.FILTER_MODE_LINEAR
+            shader.setInputShader("bg", bg)
+            shader.setInputShader("sharp", sharp)
+            shader.setInputShader("soft", soft)
+            shader.setFloatUniform("light", lx, ly)
+            shader.setFloatUniform("alpha", alpha)
+            return shader
+        }
+
+        private companion object {
+            const val AGSL = """
+                uniform shader bg;
+                uniform shader sharp;
+                uniform shader soft;
+                uniform float2 light;
+                uniform float alpha;
+
+                half4 main(float2 p) {
+                    float m = sharp.eval(p).a;
+                    if (m <= 0.004) { return half4(0.0); }
+                    float e = 7.0;
+                    float2 n = float2(soft.eval(p + float2(e, 0.0)).a - soft.eval(p - float2(e, 0.0)).a,
+                                      soft.eval(p + float2(0.0, e)).a - soft.eval(p - float2(0.0, e)).a);
+                    float inner = soft.eval(p).a;
+                    half4 c = bg.eval(p + n * 120.0);
+                    float len = length(n);
+                    float spec = 0.0;
+                    if (len > 0.0001) {
+                        spec = pow(max(dot(n / len, light), 0.0), 8.0) * min(len * 6.0, 1.0);
+                    }
+                    float rim = (1.0 - inner) * 0.35;
+                    half3 col = c.rgb * 1.08 + half3(0.06 + spec * 0.9 + rim);
+                    return half4(col, 1.0) * half(m * alpha);
+                }
+            """
+        }
+    }
+
+    private companion object {
+        // Design units; the canvas scale maps them to the box.
+        const val TIME_SIZE = 400f
+        const val DATE_SIZE = 50f
+        const val DATE_H = 62f
+        const val GAP = 44f
+        const val LINE_GAP = 56f
+        const val SOFT_RADIUS = 22f
+    }
+}

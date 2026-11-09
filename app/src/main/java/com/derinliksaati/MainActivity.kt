@@ -1,5 +1,6 @@
 package com.derinliksaati
 
+import android.app.Activity
 import android.app.AlertDialog
 import android.app.WallpaperManager
 import android.content.ActivityNotFoundException
@@ -37,6 +38,15 @@ class MainActivity : ComponentActivity() {
         if (uri != null) buildLayers(uri)
     }
 
+    private val editSelection = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            runStep(R.string.photo_filling, { Layers.finish(applicationContext) }) { updateStatus() }
+        } else {
+            Layers.pending = null
+            updateStatus()
+        }
+    }
+
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(Layers.localized(newBase))
     }
@@ -59,9 +69,11 @@ class MainActivity : ComponentActivity() {
         bindSlider(R.id.volume, R.id.volumeValue, Layers.KEY_VOLUME, Layers.DEFAULT_VOLUME) { "%$it" }
         bindSlider(R.id.subjectTurn, R.id.subjectTurnValue, Layers.KEY_SUBJECT_TURN, Layers.DEFAULT_SUBJECT_TURN) { "%$it" }
         bindSlider(R.id.clockAlpha, R.id.clockAlphaValue, Layers.KEY_CLOCK_ALPHA, Layers.DEFAULT_CLOCK_ALPHA) { "%$it" }
-        bindCheck(R.id.clockFront, Layers.KEY_CLOCK_FRONT, false)
+        bindClockChoices()
+        bindCheck(R.id.clockTilt, Layers.KEY_CLOCK_TILT, true)
         bindCheck(R.id.clockHome, Layers.KEY_CLOCK_HOME, true)
         findViewById<Button>(R.id.apply).setOnClickListener { applyWallpaper() }
+        findViewById<Button>(R.id.clockEdit).setOnClickListener { startActivity(Intent(this, ClockEditActivity::class.java)) }
         findViewById<Button>(R.id.clockHelp).setOnClickListener { showClockHint() }
         batteryButton.setOnClickListener { requestBatteryExemption() }
         updateStatus()
@@ -96,6 +108,32 @@ class MainActivity : ComponentActivity() {
         })
     }
 
+    private fun bindClockChoices() {
+        val shapes = listOf(R.id.shapeRelief, R.id.shapeVolume)
+        findViewById<RadioGroup>(R.id.shape).apply {
+            check(shapes[prefs.getInt(Layers.KEY_SHAPE, Layers.SHAPE_RELIEF)])
+            setOnCheckedChangeListener { _, id -> prefs.edit().putInt(Layers.KEY_SHAPE, shapes.indexOf(id)).apply() }
+        }
+        val styles = listOf(R.id.styleClassic, R.id.styleFrosted, R.id.styleLiquid)
+        findViewById<RadioGroup>(R.id.clockStyle).apply {
+            check(styles[prefs.getInt(Layers.KEY_CLOCK_STYLE, Layers.STYLE_CLASSIC)])
+            setOnCheckedChangeListener { _, id -> prefs.edit().putInt(Layers.KEY_CLOCK_STYLE, styles.indexOf(id)).apply() }
+        }
+        val depths = listOf(R.id.depthAuto, R.id.depthBehind, R.id.depthFront)
+        findViewById<RadioGroup>(R.id.clockDepth).apply {
+            check(depths[prefs.getInt(Layers.KEY_CLOCK_DEPTH, Layers.DEPTH_AUTO)])
+            setOnCheckedChangeListener { _, id -> prefs.edit().putInt(Layers.KEY_CLOCK_DEPTH, depths.indexOf(id)).apply() }
+        }
+        findViewById<RadioGroup>(R.id.clockLayout).apply {
+            check(if (prefs.getBoolean(Layers.KEY_CLOCK_VERTICAL, false)) R.id.layoutVertical else R.id.layoutHorizontal)
+            setOnCheckedChangeListener { _, id ->
+                prefs.edit().putBoolean(Layers.KEY_CLOCK_VERTICAL, id == R.id.layoutVertical).apply()
+                // The two layouts have very different shapes, so the old box would stretch the new one badly.
+                Layers.clearClockBox(this@MainActivity)
+            }
+        }
+    }
+
     private fun bindLanguage() {
         val group = findViewById<RadioGroup>(R.id.language)
         group.check(if (Layers.locale(this).language == "tr") R.id.langTr else R.id.langEn)
@@ -116,26 +154,33 @@ class MainActivity : ComponentActivity() {
         val bounds = windowManager.maximumWindowMetrics.bounds
         val w = minOf(bounds.width(), bounds.height())
         val h = maxOf(bounds.width(), bounds.height())
-        setBusy(true)
+        runStep(R.string.photo_working, { Layers.prepare(applicationContext, uri, w, h) }) {
+            editSelection.launch(Intent(this, MaskEditActivity::class.java))
+        }
+    }
+
+    /** Runs slow photo work off the main thread with the busy state on; [next] runs on the main thread if it worked. */
+    private fun runStep(message: Int, work: () -> Unit, next: () -> Unit) {
+        setBusy(true, message)
         worker.execute {
             val error = try {
-                Layers.build(applicationContext, uri, w, h)
+                work()
                 null
             } catch (e: Exception) {
-                Log.e(TAG, "Could not build layers", e)
+                Log.e(TAG, "Could not process the photo", e)
                 e
             }
             runOnUiThread {
-                setBusy(false)
-                if (error == null) updateStatus() else status.setText(R.string.photo_failed)
+                setBusy(false, message)
+                if (error == null) next() else status.setText(R.string.photo_failed)
             }
         }
     }
 
-    private fun setBusy(busy: Boolean) {
+    private fun setBusy(busy: Boolean, message: Int) {
         progress.visibility = if (busy) View.VISIBLE else View.GONE
         pickButton.isEnabled = !busy
-        if (busy) status.setText(R.string.photo_working)
+        if (busy) status.setText(message)
     }
 
     private fun updateStatus() {

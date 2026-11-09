@@ -89,6 +89,29 @@
             android:max="100"
             android:min="0" />
 
+        <RadioGroup
+            android:id="@+id/shape"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:contentDescription="@string/shape_label"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/shapeRelief"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/shape_relief" />
+
+            <RadioButton
+                android:id="@+id/shapeVolume"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/shape_volume" />
+        </RadioGroup>
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -133,12 +156,109 @@
             android:max="100"
             android:min="0" />
 
-        <CheckBox
-            android:id="@+id/clockFront"
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="@string/clock_front_label" />
+            android:text="@string/clock_style_label" />
+
+        <RadioGroup
+            android:id="@+id/clockStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/clock_style_label"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/styleClassic"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/clock_style_classic" />
+
+            <RadioButton
+                android:id="@+id/styleFrosted"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/clock_style_frosted" />
+
+            <RadioButton
+                android:id="@+id/styleLiquid"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/clock_style_liquid" />
+        </RadioGroup>
+
+        <RadioGroup
+            android:id="@+id/clockLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/layoutHorizontal"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/clock_layout_horizontal" />
+
+            <RadioButton
+                android:id="@+id/layoutVertical"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/clock_layout_vertical" />
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/clock_depth_label" />
+
+        <RadioGroup
+            android:id="@+id/clockDepth"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/clock_depth_label"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/depthAuto"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/clock_depth_auto" />
+
+            <RadioButton
+                android:id="@+id/depthBehind"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/clock_depth_behind" />
+
+            <RadioButton
+                android:id="@+id/depthFront"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/clock_depth_front" />
+        </RadioGroup>
+
+        <CheckBox
+            android:id="@+id/clockTilt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/clock_tilt_label" />
+
+        <Button
+            android:id="@+id/clockEdit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/clock_edit" />
 
         <CheckBox
             android:id="@+id/clockHome"

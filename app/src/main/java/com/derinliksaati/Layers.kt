@@ -33,7 +33,24 @@ import kotlin.math.sin
 object Layers {
     const val KEY_VERSION = "layersVersion"
     const val KEY_DEPTH = "depth"            // 0..100: share of MAX_VIEW_DEG
-    const val KEY_CLOCK_FRONT = "clockFront" // true: clock in front of the person
+    const val KEY_CLOCK_STYLE = "clockStyle"       // STYLE_*
+    const val KEY_CLOCK_VERTICAL = "clockVertical" // true: hours above minutes
+    // The clock's box as shares of the screen; unset = the default box.
+    const val KEY_CLOCK_L = "clockL"
+    const val KEY_CLOCK_T = "clockT"
+    const val KEY_CLOCK_W = "clockW"
+    const val KEY_CLOCK_H = "clockH"
+    const val KEY_CLOCK_TILT = "clockTilt"   // false: the clock does not turn with the phone
+    const val KEY_CLOCK_DEPTH = "clockDepth" // DEPTH_*
+    const val DEPTH_AUTO = 0
+    const val DEPTH_BEHIND = 1
+    const val DEPTH_FRONT = 2
+    const val KEY_SHAPE = "shape" // SHAPE_*
+    const val SHAPE_RELIEF = 0
+    const val SHAPE_VOLUME = 1
+    const val STYLE_CLASSIC = 0
+    const val STYLE_FROSTED = 1
+    const val STYLE_LIQUID = 2
     const val KEY_CLOCK_HOME = "clockHome"   // false: no clock on the home screen
     const val KEY_CLOCK_ALPHA = "clockAlpha" // 0..100 % visible
     const val KEY_CLOCK_HINT_SHOWN = "clockHintShown"
@@ -55,6 +72,14 @@ object Layers {
 
     fun prefs(c: Context): SharedPreferences = c.getSharedPreferences("derinlik", Context.MODE_PRIVATE)
 
+    fun saveClockBox(c: Context, l: Float, t: Float, w: Float, h: Float) {
+        prefs(c).edit().putFloat(KEY_CLOCK_L, l).putFloat(KEY_CLOCK_T, t).putFloat(KEY_CLOCK_W, w).putFloat(KEY_CLOCK_H, h).apply()
+    }
+
+    fun clearClockBox(c: Context) {
+        prefs(c).edit().remove(KEY_CLOCK_L).remove(KEY_CLOCK_T).remove(KEY_CLOCK_W).remove(KEY_CLOCK_H).apply()
+    }
+
     /** The language picked in the app, or the phone's language if none was picked. */
     fun locale(c: Context): Locale =
         prefs(c).getString(KEY_LANG, null)?.let { Locale.forLanguageTag(it) } ?: Locale.getDefault()
@@ -71,9 +96,27 @@ object Layers {
         if (!f.exists()) null
         else try { ImageDecoder.decodeBitmap(ImageDecoder.createSource(f)) } catch (e: IOException) { null }
 
-    /** Cuts the person out of the photo on the device and saves both layers. Slow: call off the main thread. */
-    fun build(context: Context, uri: Uri, width: Int, height: Int) {
+    /** A photo waiting in the selection screen; [mask] is an editable ALPHA_8 bitmap of the same size. */
+    class Pending(val photo: Bitmap, val mask: Bitmap)
+
+    // shortcut: held in memory, so the app being killed during selection means picking the photo again; save to files if that shows up.
+    @Volatile
+    var pending: Pending? = null
+
+    /** Loads the photo and pre-selects any person, ready for the selection screen. Slow: call off the main thread. */
+    fun prepare(context: Context, uri: Uri, width: Int, height: Int) {
         val photo = decodeCropped(context, uri, width, height)
+        val mask = try {
+            segment(photo)
+        } catch (e: Exception) {
+            // No automatic selection is fine: the user can still paint it by hand.
+            Log.w("DerinlikSaati", "Automatic selection failed", e)
+            Bitmap.createBitmap(photo.width, photo.height, Bitmap.Config.ARGB_8888)
+        }
+        pending = Pending(photo, mask.extractAlpha().copy(Bitmap.Config.ALPHA_8, true))
+    }
+
+    private fun segment(photo: Bitmap): Bitmap {
         val segmenter = Segmentation.getClient(
             SelfieSegmenterOptions.Builder()
                 .setDetectorMode(SelfieSegmenterOptions.SINGLE_IMAGE_MODE)
@@ -84,9 +127,17 @@ object Layers {
         } finally {
             segmenter.close()
         }
-        val mask = maskBitmap(result.buffer, result.width, result.height, photo.width, photo.height)
-        save(fillBehind(context, photo, mask), bgFile(context), Bitmap.CompressFormat.JPEG)
-        save(cutOut(photo, mask), subjectFile(context), Bitmap.CompressFormat.PNG)
+        return maskBitmap(result.buffer, result.width, result.height, photo.width, photo.height)
+    }
+
+    /** Builds and saves both layers from the finished selection. Slow: call off the main thread. */
+    fun finish(context: Context) {
+        val p = pending ?: return
+        val mask = Bitmap.createBitmap(p.mask.width, p.mask.height, Bitmap.Config.ARGB_8888)
+        Canvas(mask).drawBitmap(p.mask, 0f, 0f, Paint())
+        save(fillBehind(context, p.photo, mask), bgFile(context), Bitmap.CompressFormat.JPEG)
+        save(cutOut(p.photo, mask), subjectFile(context), Bitmap.CompressFormat.PNG)
+        pending = null
         // The wallpaper service listens for this key and reloads the files.
         prefs(context).edit().putLong(KEY_VERSION, System.currentTimeMillis()).apply()
     }

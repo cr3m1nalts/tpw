@@ -12,7 +12,6 @@
     <string name="photo_failed">Bu fotoğraf işlenemedi. Başka bir fotoğraf dene.</string>
 
     <string name="depth_label">En çok bakış açısı</string>
-    <string name="clock_front_label">Saat kişinin önünde dursun</string>
     <string name="clock_home_label">Ana ekranda da saati göster</string>
     <string name="clock_alpha_label">Saatin görünürlüğü</string>
     <string name="volume_label">Kişinin hacmi</string>
@@ -28,4 +27,30 @@
     <string name="clock_hint_title">Samsung saatini gizle</string>
     <string name="clock_hint">Samsung kilit ekranı saatini kendisi çizer ve bu saat bizimkinin üstünde kalır.\n\n1. Kilit ekranına uzun bas ve Düzenle\'ye dokun.\n2. Saate dokun, sonra renk seçimini aç.\n3. Saydamlık çubuğunu %0\'a çek, Tamam ve Bitti\'ye dokun.\n\nMenü adları One UI sürümüne göre biraz farklı olabilir.</string>
     <string name="ok">Tamam</string>
+    <string name="photo_filling">Arka plan dolduruluyor…</string>
+    <string name="edit_hint">Öne çıkacak yeri boya. Yakınlaştırmak için iki parmağını kullan.</string>
+    <string name="edit_brush">Fırça</string>
+    <string name="edit_erase">Silgi</string>
+    <string name="edit_size">Fırça boyutu</string>
+    <string name="edit_undo">Geri al</string>
+    <string name="edit_clear">Temizle</string>
+    <string name="edit_done">Bitti</string>
+    <string name="edit_empty">Önce bir yeri boya.</string>
+    <string name="clock_style_label">Saat stili</string>
+    <string name="clock_style_classic">Klasik</string>
+    <string name="clock_style_frosted">Buzlu cam</string>
+    <string name="clock_style_liquid">Sıvı cam</string>
+    <string name="clock_layout_horizontal">Yatay</string>
+    <string name="clock_layout_vertical">Dikey</string>
+    <string name="clock_edit">Saati taşı ve boyutlandır</string>
+    <string name="clock_edit_hint">Taşımak için sürükle. Köşeler orantılı büyütür, kenarlar sadece eni ya da boyu değiştirir.</string>
+    <string name="clock_reset">Sıfırla</string>
+    <string name="clock_depth_label">Saatin konumu</string>
+    <string name="clock_depth_auto">Otomatik</string>
+    <string name="clock_depth_behind">Arkada</string>
+    <string name="clock_depth_front">Önde</string>
+    <string name="clock_tilt_label">Saat telefonla birlikte dönsün</string>
+    <string name="shape_label">Cismin şekli</string>
+    <string name="shape_relief">Kabartma</string>
+    <string name="shape_volume">Hacim</string>
 </resources>
