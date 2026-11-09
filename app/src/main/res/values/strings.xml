@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Derinlik Saati</string>
-    <string name="wallpaper_description">The person and the clock stay put; turning the phone shows the scene from an angle.</string>
-    <string name="wallpaper_no_photo">Pick a photo in the Derinlik Saati app</string>
+    <string name="app_name">TPW!</string>
+    <string name="wallpaper_description">The object and the clock stay put; turning the phone shows the scene from an angle.</string>
+    <string name="wallpaper_no_photo">Pick a photo in the TPW! app</string>
 
-    <string name="intro">The person and the clock stay in place. Turn the phone and you see the scene from an angle, as if you stepped to the side.</string>
+    <string name="intro">The object and the clock stay in place. Turn the phone and you see the scene from an angle, as if you stepped to the side.</string>
     <string name="pick_photo">Pick a photo</string>
-    <string name="photo_none">Pick a photo first. The person is cut out on your phone, no internet needed.</string>
-    <string name="photo_working">Separating the person from the background…</string>
+    <string name="photo_none">Pick a photo first. Your photos are processed on your phone, no internet needed.</string>
+    <string name="photo_working">Separating the object from the background…</string>
     <string name="photo_ready">Photo ready. Pick a new photo to change it.</string>
     <string name="photo_failed">This photo could not be processed. Try another one.</string>
 
     <string name="depth_label">Maximum viewing angle</string>
     <string name="clock_home_label">Show the clock on the home screen too</string>
     <string name="clock_alpha_label">Clock visibility</string>
-    <string name="volume_label">Person\'s volume</string>
-    <string name="subject_turn_label">Person\'s angle</string>
+    <string name="volume_label">Object volume</string>
+    <string name="subject_turn_label">Object angle</string>
     <string name="language_label">Language</string>
     <string name="preview_description">Live preview of the wallpaper. It changes as you turn the phone.</string>
 

@@ -3,3 +3,7 @@
 build/
 local.properties
 *.iml
+.kotlin/
+*.apk
+# Fetched at build time, too large for a normal Git file.
+app/src/main/assets/lama_dilated.tflite

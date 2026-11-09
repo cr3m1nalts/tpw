@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Derinlik Saati</string>
-    <string name="wallpaper_description">Telefonu çevirdikçe kişi ve saat yerinde kalır, sahneye yandan bakıyormuş gibi açılı görürsün.</string>
-    <string name="wallpaper_no_photo">Derinlik Saati uygulamasından bir fotoğraf seç</string>
+    <string name="app_name">TPW!</string>
+    <string name="wallpaper_description">Telefonu çevirdikçe cisim ve saat yerinde kalır, sahneye yandan bakıyormuş gibi açılı görürsün.</string>
+    <string name="wallpaper_no_photo">TPW! uygulamasından bir fotoğraf seç</string>
 
-    <string name="intro">Kişi ve saat yerinde duruyor. Telefonu çevirdikçe sahneye yandan bakıyormuş gibi açılı görürsün.</string>
+    <string name="intro">Cisim ve saat yerinde duruyor. Telefonu çevirdikçe sahneye yandan bakıyormuş gibi açılı görürsün.</string>
     <string name="pick_photo">Fotoğraf seç</string>
-    <string name="photo_none">Önce bir fotoğraf seç. Kişi cihazda otomatik olarak ayrılır, internet gerekmez.</string>
-    <string name="photo_working">Kişi arka plandan ayrılıyor…</string>
+    <string name="photo_none">Önce bir fotoğraf seç. Fotoğrafların telefonunda işlenir, internet gerekmez.</string>
+    <string name="photo_working">Cisim arka plandan ayrılıyor…</string>
     <string name="photo_ready">Fotoğraf hazır. Değiştirmek için yeni bir fotoğraf seç.</string>
     <string name="photo_failed">Bu fotoğraf işlenemedi. Başka bir fotoğraf dene.</string>
 
     <string name="depth_label">En çok bakış açısı</string>
     <string name="clock_home_label">Ana ekranda da saati göster</string>
     <string name="clock_alpha_label">Saatin görünürlüğü</string>
-    <string name="volume_label">Kişinin hacmi</string>
-    <string name="subject_turn_label">Kişinin açısı</string>
+    <string name="volume_label">Cismin hacmi</string>
+    <string name="subject_turn_label">Cismin açısı</string>
     <string name="language_label">Dil</string>
     <string name="preview_description">Duvar kağıdının canlı önizlemesi. Telefonu çevirince değişir.</string>
 
