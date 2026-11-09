@@ -10,8 +10,8 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.text.format.DateFormat
+import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.sqrt
@@ -110,7 +110,7 @@ class DepthRenderer(private val context: Context) {
             datePaint.color = Color.WHITE
             datePaint.clearShadowLayer()
             datePaint.textSize = w * 40f / 900f
-            c.drawText(context.getString(R.string.wallpaper_no_photo), w / 2, h * 0.62f, datePaint)
+            c.drawText(Layers.localized(context).getString(R.string.wallpaper_no_photo), w / 2, h * 0.62f, datePaint)
             return
         }
 
@@ -132,19 +132,20 @@ class DepthRenderer(private val context: Context) {
         c.drawBitmap(bg, null, dst, layerPaint)
         c.restore()
         if (showClock && !clockFront) drawClock(c, w, h)
-        drawSubject(c, w, h, s, subject, tiltX * maxDeg * SUBJECT_TURN, tiltY * maxDeg * PITCH_SHARE * SUBJECT_TURN)
+        val turn = prefs.getInt(Layers.KEY_SUBJECT_TURN, Layers.DEFAULT_SUBJECT_TURN) / 100f
+        drawSubject(c, w, h, s, subject, tiltX * maxDeg * turn, tiltY * maxDeg * PITCH_SHARE * turn)
         if (showClock && clockFront) drawClock(c, w, h)
     }
 
     /**
      * The person turns too, but less than the background, so the depth gap between them stays. On top of that
-     * the person is a bent mesh, not a flat card: each vertex sits [bulge] × VOLUME in front of the person's
+     * the person is a bent mesh, not a flat card: each vertex sits [bulge] × volume in front of the person's
      * plane, so the middle of the body turns more than its edges. The offset at rest is subtracted, so with
      * the phone held still the person looks exactly like the photo.
      */
     private fun drawSubject(c: Canvas, w: Float, h: Float, s: Float, subject: Bitmap, yawDeg: Float, pitchDeg: Float) {
         val bulge = bulge ?: return
-        val front = VOLUME * w
+        val front = Layers.MAX_VOLUME * prefs.getInt(Layers.KEY_VOLUME, Layers.DEFAULT_VOLUME) / 100f * w
         viewMatrix(w, h, yawDeg, pitchDeg)
         planeAt.set(view)
         viewMatrix(w, h, yawDeg, pitchDeg, front)
@@ -205,7 +206,8 @@ class DepthRenderer(private val context: Context) {
         val now = Date()
         val is24 = DateFormat.is24HourFormat(context)
         val time = DateFormat.format(if (is24) "HH:mm" else "h:mm", now).toString()
-        val date = DateFormat.format(DateFormat.getBestDateTimePattern(Locale.getDefault(), "EEEEdMMMM"), now).toString()
+        val locale = Layers.locale(context)
+        val date = SimpleDateFormat(DateFormat.getBestDateTimePattern(locale, "EEEEdMMMM"), locale).format(now)
         val shadow = Color.argb(alpha * 89 / 255, 20, 10, 40)
 
         timePaint.color = Color.argb(alpha, 255, 255, 255)
@@ -227,10 +229,6 @@ class DepthRenderer(private val context: Context) {
         const val PITCH_SHARE = 0.6f
         /** Viewer distance in screen widths; smaller = stronger perspective. */
         const val CAMERA_DISTANCE = 1.2f
-        /** The person turns this share of the background's angle. */
-        const val SUBJECT_TURN = 0.5f
-        /** How far the thickest part of the person sticks out, in screen widths. */
-        const val VOLUME = 0.12f
         /** Mesh cells across and down the person layer. */
         const val MESH_X = 32
         const val MESH_Y = 64

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Derinlik Saati</string>
+    <string name="wallpaper_description">Telefonu çevirdikçe kişi ve saat yerinde kalır, sahneye yandan bakıyormuş gibi açılı görürsün.</string>
+    <string name="wallpaper_no_photo">Derinlik Saati uygulamasından bir fotoğraf seç</string>
+
+    <string name="intro">Kişi ve saat yerinde duruyor. Telefonu çevirdikçe sahneye yandan bakıyormuş gibi açılı görürsün.</string>
+    <string name="pick_photo">Fotoğraf seç</string>
+    <string name="photo_none">Önce bir fotoğraf seç. Kişi cihazda otomatik olarak ayrılır, internet gerekmez.</string>
+    <string name="photo_working">Kişi arka plandan ayrılıyor…</string>
+    <string name="photo_ready">Fotoğraf hazır. Değiştirmek için yeni bir fotoğraf seç.</string>
+    <string name="photo_failed">Bu fotoğraf işlenemedi. Başka bir fotoğraf dene.</string>
+
+    <string name="depth_label">En çok bakış açısı</string>
+    <string name="clock_front_label">Saat kişinin önünde dursun</string>
+    <string name="clock_home_label">Ana ekranda da saati göster</string>
+    <string name="clock_alpha_label">Saatin görünürlüğü</string>
+    <string name="volume_label">Kişinin hacmi</string>
+    <string name="subject_turn_label">Kişinin açısı</string>
+    <string name="language_label">Dil</string>
+    <string name="preview_description">Duvar kağıdının canlı önizlemesi. Telefonu çevirince değişir.</string>
+
+    <string name="apply">Duvar kağıdı olarak uygula</string>
+    <string name="apply_note">Açılan ekranda kilit ekranını seç.</string>
+    <string name="clock_help">Samsung saati üstte mi kalıyor?</string>
+    <string name="battery">Pil kısıtlamasını kaldır</string>
+
+    <string name="clock_hint_title">Samsung saatini gizle</string>
+    <string name="clock_hint">Samsung kilit ekranı saatini kendisi çizer ve bu saat bizimkinin üstünde kalır.\n\n1. Kilit ekranına uzun bas ve Düzenle\'ye dokun.\n2. Saate dokun, sonra renk seçimini aç.\n3. Saydamlık çubuğunu %0\'a çek, Tamam ve Bitti\'ye dokun.\n\nMenü adları One UI sürümüne göre biraz farklı olabilir.</string>
+    <string name="ok">Tamam</string>
+</resources>

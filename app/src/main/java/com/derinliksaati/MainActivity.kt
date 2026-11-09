@@ -4,6 +4,7 @@ import android.app.AlertDialog
 import android.app.WallpaperManager
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -14,6 +15,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.ProgressBar
+import android.widget.RadioGroup
 import android.widget.SeekBar
 import android.widget.TextView
 import androidx.activity.ComponentActivity
@@ -35,9 +37,14 @@ class MainActivity : ComponentActivity() {
         if (uri != null) buildLayers(uri)
     }
 
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(Layers.localized(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        bindLanguage()
         status = findViewById(R.id.status)
         progress = findViewById(R.id.progress)
         pickButton = findViewById(R.id.pickPhoto)
@@ -49,6 +56,8 @@ class MainActivity : ComponentActivity() {
         bindSlider(R.id.depth, R.id.depthValue, Layers.KEY_DEPTH, Layers.DEFAULT_DEPTH) {
             "${(Layers.MAX_VIEW_DEG * it / 100).toInt()}°"
         }
+        bindSlider(R.id.volume, R.id.volumeValue, Layers.KEY_VOLUME, Layers.DEFAULT_VOLUME) { "%$it" }
+        bindSlider(R.id.subjectTurn, R.id.subjectTurnValue, Layers.KEY_SUBJECT_TURN, Layers.DEFAULT_SUBJECT_TURN) { "%$it" }
         bindSlider(R.id.clockAlpha, R.id.clockAlphaValue, Layers.KEY_CLOCK_ALPHA, Layers.DEFAULT_CLOCK_ALPHA) { "%$it" }
         bindCheck(R.id.clockFront, Layers.KEY_CLOCK_FRONT, false)
         bindCheck(R.id.clockHome, Layers.KEY_CLOCK_HOME, true)
@@ -85,6 +94,15 @@ class MainActivity : ComponentActivity() {
             override fun onStartTrackingTouch(s: SeekBar) = Unit
             override fun onStopTrackingTouch(s: SeekBar) = Unit
         })
+    }
+
+    private fun bindLanguage() {
+        val group = findViewById<RadioGroup>(R.id.language)
+        group.check(if (Layers.locale(this).language == "tr") R.id.langTr else R.id.langEn)
+        group.setOnCheckedChangeListener { _, id ->
+            prefs.edit().putString(Layers.KEY_LANG, if (id == R.id.langTr) "tr" else "en").apply()
+            recreate() // reload every text in the new language
+        }
     }
 
     private fun bindCheck(id: Int, key: String, default: Boolean) {

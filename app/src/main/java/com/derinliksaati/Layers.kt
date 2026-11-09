@@ -2,6 +2,7 @@ package com.derinliksaati
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -19,6 +20,7 @@ import com.google.mlkit.vision.segmentation.selfie.SelfieSegmenterOptions
 import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
+import java.util.Locale
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -35,8 +37,15 @@ object Layers {
     const val KEY_CLOCK_HOME = "clockHome"   // false: no clock on the home screen
     const val KEY_CLOCK_ALPHA = "clockAlpha" // 0..100 % visible
     const val KEY_CLOCK_HINT_SHOWN = "clockHintShown"
+    const val KEY_VOLUME = "volume"             // 0..100: share of MAX_VOLUME
+    const val KEY_SUBJECT_TURN = "subjectTurn"  // 0..100 % of the background's angle the person turns
+    const val KEY_LANG = "lang"                 // "tr" / "en"; unset = phone language
     const val DEFAULT_DEPTH = 70
     const val DEFAULT_CLOCK_ALPHA = 93
+    const val DEFAULT_VOLUME = 48               // = 0.12 screen widths, the tuned value
+    const val DEFAULT_SUBJECT_TURN = 50
+    /** Thickest part of the person at the volume slider's maximum, in screen widths. */
+    const val MAX_VOLUME = 0.25f
     const val MAX_VIEW_DEG = 30f
 
     /** Layers are this much taller than the screen, so tilting forward/back has picture to show. */
@@ -45,6 +54,16 @@ object Layers {
     private const val MAX_WIDE = 1.8f
 
     fun prefs(c: Context): SharedPreferences = c.getSharedPreferences("derinlik", Context.MODE_PRIVATE)
+
+    /** The language picked in the app, or the phone's language if none was picked. */
+    fun locale(c: Context): Locale =
+        prefs(c).getString(KEY_LANG, null)?.let { Locale.forLanguageTag(it) } ?: Locale.getDefault()
+
+    /** [c] with the language picked in the app, for its strings. */
+    fun localized(c: Context): Context {
+        val config = Configuration(c.resources.configuration).apply { setLocale(locale(c)) }
+        return c.createConfigurationContext(config)
+    }
     fun bgFile(c: Context) = File(c.filesDir, "bg.jpg")
     fun subjectFile(c: Context) = File(c.filesDir, "subject.png")
 
