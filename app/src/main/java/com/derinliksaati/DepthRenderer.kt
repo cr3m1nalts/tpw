@@ -14,6 +14,7 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.sqrt
 
 /**
  * Draws the wallpaper. Shared by the wallpaper service and the in-app preview, so both look the same.
@@ -34,6 +35,12 @@ class DepthRenderer(private val context: Context) {
     private val view = Matrix()
     private val inverse = Matrix()
     private val corners = FloatArray(8)
+    private var bulge: FloatArray? = null
+    private val planeAt = Matrix()
+    private val frontAt = Matrix()
+    private val frontAtRest = Matrix()
+    private val point = FloatArray(6)
+    private val mesh = FloatArray((MESH_X + 1) * (MESH_Y + 1) * 2)
     private val layerPaint = Paint(Paint.FILTER_BITMAP_FLAG)
     private val timePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER
@@ -50,6 +57,47 @@ class DepthRenderer(private val context: Context) {
         loadedVersion = version
         bg = Layers.load(Layers.bgFile(context))
         subject = Layers.load(Layers.subjectFile(context))
+        bulge = subject?.let { bulgeOf(it) }
+    }
+
+    /**
+     * How far each mesh vertex sticks out toward the viewer, 0..1: 0 at the person's edge and outside,
+     * rising to 1 at the thickest part, with a rounded (circle-like) profile so the person reads as a body.
+     * Worked out on the mesh grid from the person's outline (chamfer distance to the nearest edge).
+     */
+    private fun bulgeOf(subject: Bitmap): FloatArray {
+        val cols = MESH_X + 1
+        val rows = MESH_Y + 1
+        // The layer is a hardware bitmap (not readable); a scaled software copy is, and is tiny.
+        val small = Bitmap.createScaledBitmap(subject.copy(Bitmap.Config.ARGB_8888, false), cols, rows, true)
+        val px = IntArray(cols * rows).also { small.getPixels(it, 0, cols, 0, 0, cols, rows) }
+        val cw = subject.width.toFloat() / MESH_X
+        val ch = subject.height.toFloat() / MESH_Y
+        val diag = sqrt(cw * cw + ch * ch)
+        val far = Float.MAX_VALUE / 2
+        val d = FloatArray(cols * rows) { if (Color.alpha(px[it]) > 128) far else 0f }
+        fun relax(i: Int, x: Int, y: Int, dx: Int, dy: Int, step: Float) {
+            val nx = x + dx
+            val ny = y + dy
+            val n = if (nx in 0 until cols && ny in 0 until rows) d[ny * cols + nx] else 0f
+            if (n + step < d[i]) d[i] = n + step
+        }
+        for (y in 0 until rows) for (x in 0 until cols) {
+            val i = y * cols + x
+            if (d[i] == 0f) continue
+            relax(i, x, y, -1, 0, cw); relax(i, x, y, 0, -1, ch); relax(i, x, y, -1, -1, diag); relax(i, x, y, 1, -1, diag)
+        }
+        for (y in rows - 1 downTo 0) for (x in cols - 1 downTo 0) {
+            val i = y * cols + x
+            if (d[i] == 0f) continue
+            relax(i, x, y, 1, 0, cw); relax(i, x, y, 0, 1, ch); relax(i, x, y, 1, 1, diag); relax(i, x, y, -1, 1, diag)
+        }
+        val max = d.maxOrNull()?.takeIf { it > 0f } ?: return d
+        for (i in d.indices) {
+            val t = d[i] / max
+            d[i] = sqrt(t * (2 - t))
+        }
+        return d
     }
 
     /** Draws into the w×h area at the canvas origin. [tiltX]/[tiltY] are -1..1. */
@@ -84,22 +132,53 @@ class DepthRenderer(private val context: Context) {
         c.drawBitmap(bg, null, dst, layerPaint)
         c.restore()
         if (showClock && !clockFront) drawClock(c, w, h)
-        // The person turns too, but less than the background, so the depth gap between them stays.
-        viewMatrix(w, h, tiltX * maxDeg * SUBJECT_TURN, tiltY * maxDeg * PITCH_SHARE * SUBJECT_TURN)
-        c.save()
-        c.concat(view)
-        c.scale(s, s, w / 2, h / 2)
-        c.drawBitmap(subject, null, dst, layerPaint)
-        c.restore()
+        drawSubject(c, w, h, s, subject, tiltX * maxDeg * SUBJECT_TURN, tiltY * maxDeg * PITCH_SHARE * SUBJECT_TURN)
         if (showClock && clockFront) drawClock(c, w, h)
     }
 
-    /** Perspective turn of the background plane around the center of the w×h area (where the person stands). */
-    private fun viewMatrix(w: Float, h: Float, yawDeg: Float, pitchDeg: Float) {
+    /**
+     * The person turns too, but less than the background, so the depth gap between them stays. On top of that
+     * the person is a bent mesh, not a flat card: each vertex sits [bulge] × VOLUME in front of the person's
+     * plane, so the middle of the body turns more than its edges. The offset at rest is subtracted, so with
+     * the phone held still the person looks exactly like the photo.
+     */
+    private fun drawSubject(c: Canvas, w: Float, h: Float, s: Float, subject: Bitmap, yawDeg: Float, pitchDeg: Float) {
+        val bulge = bulge ?: return
+        val front = VOLUME * w
+        viewMatrix(w, h, yawDeg, pitchDeg)
+        planeAt.set(view)
+        viewMatrix(w, h, yawDeg, pitchDeg, front)
+        frontAt.set(view)
+        viewMatrix(w, h, 0f, 0f, front)
+        frontAtRest.set(view)
+
+        val cols = MESH_X + 1
+        for (y in 0..MESH_Y) for (x in 0..MESH_X) {
+            val i = y * cols + x
+            // Vertex on the layer (dst), scaled by s around the center like the background.
+            val px = w / 2 + (dst.left + dst.width() * x / MESH_X - w / 2) * s
+            val py = h / 2 + (dst.top + dst.height() * y / MESH_Y - h / 2) * s
+            for (k in 0 until 3) { point[2 * k] = px; point[2 * k + 1] = py }
+            planeAt.mapPoints(point, 0, point, 0, 1)
+            frontAt.mapPoints(point, 2, point, 2, 1)
+            frontAtRest.mapPoints(point, 4, point, 4, 1)
+            val b = bulge[i]
+            mesh[2 * i] = point[0] + b * (point[2] - point[0] - (point[4] - px))
+            mesh[2 * i + 1] = point[1] + b * (point[3] - point[1] - (point[5] - py))
+        }
+        c.drawBitmapMesh(subject, MESH_X, MESH_Y, mesh, 0, null, 0, layerPaint)
+    }
+
+    /**
+     * Perspective turn around the center of the w×h area (where the person stands). [front] moves the
+     * plane that many pixels toward the viewer, in the plane's own direction, before it is turned.
+     */
+    private fun viewMatrix(w: Float, h: Float, yawDeg: Float, pitchDeg: Float, front: Float = 0f) {
         camera.save()
         camera.setLocation(0f, 0f, -CAMERA_DISTANCE * w / 72f) // Camera works in inches at 72 px each
         camera.rotateY(yawDeg)
         camera.rotateX(pitchDeg)
+        camera.translate(0f, 0f, -front) // Camera's negative z is toward the viewer
         camera.getMatrix(view)
         camera.restore()
         view.preTranslate(-w / 2, -h / 2)
@@ -150,5 +229,10 @@ class DepthRenderer(private val context: Context) {
         const val CAMERA_DISTANCE = 1.2f
         /** The person turns this share of the background's angle. */
         const val SUBJECT_TURN = 0.5f
+        /** How far the thickest part of the person sticks out, in screen widths. */
+        const val VOLUME = 0.12f
+        /** Mesh cells across and down the person layer. */
+        const val MESH_X = 32
+        const val MESH_Y = 64
     }
 }
