@@ -51,15 +51,13 @@ dependencies {
     implementation("com.google.ai.edge.litert:litert:2.3.2")
 }
 
-// The inpainting model is too large for Git, so the first build fetches it and checks its hash.
-val modelFile = file("src/main/assets/lama_dilated.tflite")
-val downloadModel = tasks.register("downloadModel") {
-    onlyIf { !modelFile.exists() }
+// The models are too large for Git, so the first build fetches each one and checks its hash.
+fun modelDownload(task: String, fileName: String, url: String, sha256: String) = tasks.register(task) {
+    val target = file("src/main/assets/$fileName")
+    onlyIf { !target.exists() }
     doLast {
-        val url = "https://qaihub-public-assets.s3.us-west-2.amazonaws.com/qai-hub-models/models/lama_dilated/releases/v0.66.0/lama_dilated-tflite-float.zip"
-        val expected = "fd520b4daf0d7031d233a1a1a8a39b09a13eafc789ca469e8692b270391f7280"
         val zip = File(temporaryDir, "model.zip")
-        logger.lifecycle("Downloading the inpainting model (170 MB)...")
+        logger.lifecycle("Downloading $fileName...")
         URI(url).toURL().openStream().use { input -> zip.outputStream().use { input.copyTo(it) } }
         val digest = MessageDigest.getInstance("SHA-256")
         zip.inputStream().use { input ->
@@ -71,16 +69,29 @@ val downloadModel = tasks.register("downloadModel") {
             }
         }
         val actual = digest.digest().joinToString("") { "%02x".format(it) }
-        check(actual == expected) { "Model download failed its hash check: $actual" }
-        val unpacked = File(temporaryDir, "model.tflite")
+        check(actual == sha256) { "$fileName download failed its hash check: $actual" }
+        val unpacked = File(temporaryDir, fileName)
         ZipFile(zip).use { z ->
-            val entry = z.entries().asSequence().first { it.name.endsWith("lama_dilated.tflite") }
+            val entry = z.entries().asSequence().first { it.name.endsWith(fileName) }
             z.getInputStream(entry).use { input -> unpacked.outputStream().use { input.copyTo(it) } }
         }
         // Copied only after the hash check and a full unpack, so a failed run leaves no partial model behind.
-        unpacked.copyTo(modelFile, overwrite = true)
+        unpacked.copyTo(target, overwrite = true)
         zip.delete()
         unpacked.delete()
     }
 }
-tasks.matching { it.name == "preBuild" }.configureEach { dependsOn(downloadModel) }
+
+val modelDownloads = listOf(
+    modelDownload(
+        "downloadInpaintModel", "lama_dilated.tflite",
+        "https://qaihub-public-assets.s3.us-west-2.amazonaws.com/qai-hub-models/models/lama_dilated/releases/v0.66.0/lama_dilated-tflite-float.zip",
+        "fd520b4daf0d7031d233a1a1a8a39b09a13eafc789ca469e8692b270391f7280",
+    ),
+    modelDownload(
+        "downloadDepthModel", "depth_anything_v2.tflite",
+        "https://qaihub-public-assets.s3.us-west-2.amazonaws.com/qai-hub-models/models/depth_anything_v2/releases/v0.66.0/depth_anything_v2-tflite-float.zip",
+        "98ac01249bb6e8e7fd9e75e73e82094ad61b7442fdd7a0f830c7d8aa5f15208f",
+    ),
+)
+tasks.matching { it.name == "preBuild" }.configureEach { dependsOn(modelDownloads) }

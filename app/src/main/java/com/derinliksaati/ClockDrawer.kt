@@ -44,6 +44,9 @@ class ClockDrawer(private val context: Context) {
 
     private val box = RectF()
     private val local = Matrix()
+    private val planeInverse = Matrix()
+    private var bgMove: Matrix? = null
+    private var clockPlane: Matrix? = null
     private val source = RectF()
 
     private var bgSource: Bitmap? = null
@@ -100,8 +103,14 @@ class ClockDrawer(private val context: Context) {
         out.set((w - bw) / 2, top, (w + bw) / 2, top + bh)
     }
 
-    /** [bgRect] is where [bg] and [blur] sit on screen; without them the glass styles fall back to classic. */
-    fun draw(c: Canvas, w: Float, h: Float, bg: Bitmap?, blur: Bitmap?, bgRect: RectF?, tiltX: Float, tiltY: Float) {
+    /**
+     * [bgRect] is where [bg] and [blur] sit at rest, [bgMove] how the background is moved this frame, and
+     * [clockPlane] the transform the canvas already has for the clock (null if none). Without a background
+     * the glass styles fall back to classic.
+     */
+    fun draw(c: Canvas, w: Float, h: Float, bg: Bitmap?, blur: Bitmap?, bgRect: RectF?, bgMove: Matrix?, clockPlane: Matrix?, tiltX: Float, tiltY: Float) {
+        this.bgMove = bgMove
+        this.clockPlane = clockPlane
         val alpha = prefs.getInt(Layers.KEY_CLOCK_ALPHA, Layers.DEFAULT_CLOCK_ALPHA) * 255 / 100
         if (alpha == 0) return
         box(w, h, box)
@@ -146,6 +155,8 @@ class ClockDrawer(private val context: Context) {
     private fun place(shader: Shader, bitmap: Bitmap, rect: RectF) {
         source.set(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat())
         local.setRectToRect(source, rect, Matrix.ScaleToFit.FILL)
+        bgMove?.let { local.postConcat(it) }
+        clockPlane?.let { if (it.invert(planeInverse)) local.postConcat(planeInverse) }
         local.postTranslate(-box.left, -box.top)
         local.postScale(naturalW / box.width(), naturalH / box.height())
         shader.setLocalMatrix(local)

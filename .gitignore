@@ -7,3 +7,4 @@ local.properties
 *.apk
 # Fetched at build time, too large for a normal Git file.
 app/src/main/assets/lama_dilated.tflite
+app/src/main/assets/depth_anything_v2.tflite

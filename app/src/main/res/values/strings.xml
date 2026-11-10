@@ -11,7 +11,7 @@
     <string name="photo_ready">Photo ready. Pick a new photo to change it.</string>
     <string name="photo_failed">This photo could not be processed. Try another one.</string>
 
-    <string name="depth_label">Maximum viewing angle</string>
+    <string name="depth_label">Effect strength</string>
     <string name="clock_home_label">Show the clock on the home screen too</string>
     <string name="clock_alpha_label">Clock visibility</string>
     <string name="volume_label">Object volume</string>
@@ -27,7 +27,7 @@
     <string name="clock_hint_title">Hide the Samsung clock</string>
     <string name="clock_hint">Samsung draws its own lock screen clock, and it sits on top of ours.\n\n1. Long-press the lock screen and tap Edit.\n2. Tap the clock, then open the color picker.\n3. Drag the transparency bar to 0%, then tap Done.\n\nMenu names may differ slightly between One UI versions.</string>
     <string name="ok">OK</string>
-    <string name="photo_filling">Filling in the background…</string>
+    <string name="photo_filling">Filling in the background… (can take a minute)</string>
     <string name="edit_hint">Paint what should stand out. Pinch with two fingers to zoom.</string>
     <string name="edit_brush">Brush</string>
     <string name="edit_erase">Eraser</string>
@@ -53,4 +53,12 @@
     <string name="shape_label">Object shape</string>
     <string name="shape_relief">Relief</string>
     <string name="shape_volume">Volume</string>
+    <string name="motion_label">Motion</string>
+    <string name="motion_turn">Turn</string>
+    <string name="motion_slide">Slide</string>
+    <string name="frame_edit">Position wallpaper</string>
+    <string name="frame_edit_hint">Pinch with two fingers to zoom, drag with one to move.</string>
+    <string name="motion_window">Window</string>
+    <string name="shape_depth">Depth</string>
+    <string name="bg_depth_label">Background depth</string>
 </resources>

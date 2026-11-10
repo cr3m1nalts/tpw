@@ -19,8 +19,8 @@ and the background turns in perspective around the object you picked.
 
 ## Build
 
-Open the project in Android Studio and run it. The inpainting model is
-downloaded and verified on the first build (170 MB).
+Open the project in Android Studio and run it. The inpainting and depth models are
+downloaded and verified on the first build (about 260 MB).
 
 Release builds are signed only when `~/tpw-release.keystore` and
 `~/tpw-signing.txt` exist on the build machine. Neither belongs in this repository.
@@ -38,4 +38,5 @@ Galaxy A56, Android 17, One UI 9. Other devices are untested.
 ## Credits
 
 - [LaMa-Dilated](https://huggingface.co/qualcomm/LaMa-Dilated) inpainting model, Apache-2.0
+- [Depth Anything V2 Small](https://huggingface.co/depth-anything/Depth-Anything-V2-Small) depth model, Apache-2.0, via [Qualcomm AI Hub](https://huggingface.co/qualcomm/Depth-Anything-V2) (MIT)
 - ML Kit Selfie Segmentation and LiteRT by Google

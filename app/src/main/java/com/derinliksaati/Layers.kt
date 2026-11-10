@@ -46,8 +46,20 @@ object Layers {
     const val DEPTH_BEHIND = 1
     const val DEPTH_FRONT = 2
     const val KEY_SHAPE = "shape" // SHAPE_*
+    const val KEY_MOTION = "motion" // MOTION_*
+    // How the user framed the photo: zoom (1 = as built) and pan (-1..1 of the margin the zoom creates).
+    const val KEY_FRAME_ZOOM = "frameZoom"
+    const val KEY_FRAME_X = "frameX"
+    const val KEY_FRAME_Y = "frameY"
+    const val MAX_FRAME_ZOOM = 3f
+    const val MOTION_TURN = 0
+    const val MOTION_SLIDE = 1
+    const val MOTION_WINDOW = 2
     const val SHAPE_RELIEF = 0
     const val SHAPE_VOLUME = 1
+    const val SHAPE_DEPTH = 2
+    const val KEY_BG_DEPTH = "bgDepth" // 0..100, 0 = background moves as one flat picture
+    const val DEFAULT_BG_DEPTH = 50
     const val STYLE_CLASSIC = 0
     const val STYLE_FROSTED = 1
     const val STYLE_LIQUID = 2
@@ -76,6 +88,10 @@ object Layers {
         prefs(c).edit().putFloat(KEY_CLOCK_L, l).putFloat(KEY_CLOCK_T, t).putFloat(KEY_CLOCK_W, w).putFloat(KEY_CLOCK_H, h).apply()
     }
 
+    fun clearFrame(c: Context) {
+        prefs(c).edit().remove(KEY_FRAME_ZOOM).remove(KEY_FRAME_X).remove(KEY_FRAME_Y).apply()
+    }
+
     fun clearClockBox(c: Context) {
         prefs(c).edit().remove(KEY_CLOCK_L).remove(KEY_CLOCK_T).remove(KEY_CLOCK_W).remove(KEY_CLOCK_H).apply()
     }
@@ -91,6 +107,7 @@ object Layers {
     }
     fun bgFile(c: Context) = File(c.filesDir, "bg.jpg")
     fun subjectFile(c: Context) = File(c.filesDir, "subject.png")
+    fun depthFile(c: Context) = File(c.filesDir, "depth.png")
 
     fun load(f: File): Bitmap? =
         if (!f.exists()) null
@@ -135,11 +152,20 @@ object Layers {
         val p = pending ?: return
         val mask = Bitmap.createBitmap(p.mask.width, p.mask.height, Bitmap.Config.ARGB_8888)
         Canvas(mask).drawBitmap(p.mask, 0f, 0f, Paint())
+        // Depth is an extra for the Depth shape; without it the object falls back to the relief shape.
+        try {
+            save(DepthEstimator.estimate(context, p.photo), depthFile(context), Bitmap.CompressFormat.PNG)
+        } catch (e: Exception) {
+            Log.w("DerinlikSaati", "Depth estimate failed", e)
+            depthFile(context).delete()
+        }
         save(fillBehind(context, p.photo, mask), bgFile(context), Bitmap.CompressFormat.JPEG)
         save(cutOut(p.photo, mask), subjectFile(context), Bitmap.CompressFormat.PNG)
         pending = null
         // The wallpaper service listens for this key and reloads the files.
-        prefs(context).edit().putLong(KEY_VERSION, System.currentTimeMillis()).apply()
+        // A new photo starts unzoomed and centered.
+        prefs(context).edit().putLong(KEY_VERSION, System.currentTimeMillis())
+            .remove(KEY_FRAME_ZOOM).remove(KEY_FRAME_X).remove(KEY_FRAME_Y).apply()
     }
 
     /**
@@ -189,7 +215,7 @@ object Layers {
         Canvas(known).drawBitmap(grown, 0f, 0f, porterDuff(PorterDuff.Mode.DST_OUT))
         val smooth = pushPull(known)
         return try {
-            Inpainter.fill(context, smooth, grown)
+            Inpainter.fill(context, smooth, grown, bandOf(grown, BAND * photo.height / 1950f))
         } catch (e: Exception) {
             Log.w("DerinlikSaati", "Inpainting failed, using the smooth fill", e)
             smooth
@@ -219,6 +245,23 @@ object Layers {
         return fill
     }
 
+    /** The part of [hole] within about [d] px of its edge: the only part tilting can reveal, so the part worth painting sharply. */
+    private fun bandOf(hole: Bitmap, d: Float): Bitmap {
+        val w = hole.width
+        val h = hole.height
+        val px = IntArray(w * h).also { hole.getPixels(it, 0, w, 0, 0, w, h) }
+        val outside = Bitmap.createBitmap(IntArray(w * h) { if (Color.alpha(px[it]) > 40) 0 else Color.BLACK }, w, h, Bitmap.Config.ARGB_8888)
+        val near = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val c = Canvas(near)
+        // The outside grown inward by d; several radii so there are no gaps between the 12 directions.
+        for (r in listOf(d / 3, 2 * d / 3, d)) for (i in 0 until 12) {
+            val t = i * Math.PI / 6
+            c.drawBitmap(outside, (cos(t) * r).toFloat(), (sin(t) * r).toFloat(), null)
+        }
+        val np = IntArray(w * h).also { near.getPixels(it, 0, w, 0, 0, w, h) }
+        return Bitmap.createBitmap(IntArray(w * h) { if (Color.alpha(px[it]) > 40 && Color.alpha(np[it]) > 40) Color.BLACK else 0 }, w, h, Bitmap.Config.ARGB_8888)
+    }
+
     /** Grows the mask by about [d] pixels, so the person's soft edge is not used as background. */
     private fun grow(mask: Bitmap, d: Float): Bitmap {
         val grown = Bitmap.createBitmap(mask.width, mask.height, Bitmap.Config.ARGB_8888)
@@ -232,6 +275,9 @@ object Layers {
     }
 
     private fun mutable(b: Bitmap) = if (b.isMutable) b else b.copy(Bitmap.Config.ARGB_8888, true)
+
+    /** Width of the edge band painted at high resolution, in units of a 1950 px tall layer. */
+    private const val BAND = 120f
 
     private fun porterDuff(mode: PorterDuff.Mode) = Paint().apply { xfermode = PorterDuffXfermode(mode) }
 

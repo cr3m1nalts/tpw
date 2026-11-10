@@ -67,6 +67,47 @@
             android:layout_marginTop="8dp"
             android:text="@string/pick_photo" />
 
+        <Button
+            android:id="@+id/frameEdit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/frame_edit" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/motion_label" />
+
+        <RadioGroup
+            android:id="@+id/motion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/motion_label"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/motionTurn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/motion_turn" />
+
+            <RadioButton
+                android:id="@+id/motionSlide"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/motion_slide" />
+
+            <RadioButton
+                android:id="@+id/motionWindow"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/motion_window" />
+        </RadioGroup>
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -110,6 +151,13 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/shape_volume" />
+
+            <RadioButton
+                android:id="@+id/shapeDepth"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/shape_depth" />
         </RadioGroup>
 
         <LinearLayout
@@ -153,6 +201,29 @@
             android:id="@+id/subjectTurn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:max="100"
+            android:min="0" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/bg_depth_label" />
+            <TextView
+                android:id="@+id/bgDepthValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <SeekBar
+            android:id="@+id/bgDepth"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/bg_depth_label"
             android:max="100"
             android:min="0" />
 

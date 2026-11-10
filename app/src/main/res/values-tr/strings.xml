@@ -11,7 +11,7 @@
     <string name="photo_ready">Fotoğraf hazır. Değiştirmek için yeni bir fotoğraf seç.</string>
     <string name="photo_failed">Bu fotoğraf işlenemedi. Başka bir fotoğraf dene.</string>
 
-    <string name="depth_label">En çok bakış açısı</string>
+    <string name="depth_label">Efekt gücü</string>
     <string name="clock_home_label">Ana ekranda da saati göster</string>
     <string name="clock_alpha_label">Saatin görünürlüğü</string>
     <string name="volume_label">Cismin hacmi</string>
@@ -27,7 +27,7 @@
     <string name="clock_hint_title">Samsung saatini gizle</string>
     <string name="clock_hint">Samsung kilit ekranı saatini kendisi çizer ve bu saat bizimkinin üstünde kalır.\n\n1. Kilit ekranına uzun bas ve Düzenle\'ye dokun.\n2. Saate dokun, sonra renk seçimini aç.\n3. Saydamlık çubuğunu %0\'a çek, Tamam ve Bitti\'ye dokun.\n\nMenü adları One UI sürümüne göre biraz farklı olabilir.</string>
     <string name="ok">Tamam</string>
-    <string name="photo_filling">Arka plan dolduruluyor…</string>
+    <string name="photo_filling">Arka plan dolduruluyor… (1 dakikayı bulabilir)</string>
     <string name="edit_hint">Öne çıkacak yeri boya. Yakınlaştırmak için iki parmağını kullan.</string>
     <string name="edit_brush">Fırça</string>
     <string name="edit_erase">Silgi</string>
@@ -53,4 +53,12 @@
     <string name="shape_label">Cismin şekli</string>
     <string name="shape_relief">Kabartma</string>
     <string name="shape_volume">Hacim</string>
+    <string name="motion_label">Hareket türü</string>
+    <string name="motion_turn">Döndürme</string>
+    <string name="motion_slide">Kaydırma</string>
+    <string name="frame_edit">Duvar kağıdını yerleştir</string>
+    <string name="frame_edit_hint">Büyütmek için iki parmağını aç, taşımak için tek parmakla sürükle.</string>
+    <string name="motion_window">Pencere</string>
+    <string name="shape_depth">Derinlik</string>
+    <string name="bg_depth_label">Arka plan derinliği</string>
 </resources>

@@ -64,15 +64,17 @@ class MainActivity : ComponentActivity() {
             pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         }
         bindSlider(R.id.depth, R.id.depthValue, Layers.KEY_DEPTH, Layers.DEFAULT_DEPTH) {
-            "${(Layers.MAX_VIEW_DEG * it / 100).toInt()}°"
+            "%$it"
         }
         bindSlider(R.id.volume, R.id.volumeValue, Layers.KEY_VOLUME, Layers.DEFAULT_VOLUME) { "%$it" }
         bindSlider(R.id.subjectTurn, R.id.subjectTurnValue, Layers.KEY_SUBJECT_TURN, Layers.DEFAULT_SUBJECT_TURN) { "%$it" }
+        bindSlider(R.id.bgDepth, R.id.bgDepthValue, Layers.KEY_BG_DEPTH, Layers.DEFAULT_BG_DEPTH) { "%$it" }
         bindSlider(R.id.clockAlpha, R.id.clockAlphaValue, Layers.KEY_CLOCK_ALPHA, Layers.DEFAULT_CLOCK_ALPHA) { "%$it" }
         bindClockChoices()
         bindCheck(R.id.clockTilt, Layers.KEY_CLOCK_TILT, true)
         bindCheck(R.id.clockHome, Layers.KEY_CLOCK_HOME, true)
         findViewById<Button>(R.id.apply).setOnClickListener { applyWallpaper() }
+        findViewById<Button>(R.id.frameEdit).setOnClickListener { startActivity(Intent(this, FrameEditActivity::class.java)) }
         findViewById<Button>(R.id.clockEdit).setOnClickListener { startActivity(Intent(this, ClockEditActivity::class.java)) }
         findViewById<Button>(R.id.clockHelp).setOnClickListener { showClockHint() }
         batteryButton.setOnClickListener { requestBatteryExemption() }
@@ -109,7 +111,12 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun bindClockChoices() {
-        val shapes = listOf(R.id.shapeRelief, R.id.shapeVolume)
+        val motions = listOf(R.id.motionTurn, R.id.motionSlide, R.id.motionWindow)
+        findViewById<RadioGroup>(R.id.motion).apply {
+            check(motions[prefs.getInt(Layers.KEY_MOTION, Layers.MOTION_TURN)])
+            setOnCheckedChangeListener { _, id -> prefs.edit().putInt(Layers.KEY_MOTION, motions.indexOf(id)).apply() }
+        }
+        val shapes = listOf(R.id.shapeRelief, R.id.shapeVolume, R.id.shapeDepth)
         findViewById<RadioGroup>(R.id.shape).apply {
             check(shapes[prefs.getInt(Layers.KEY_SHAPE, Layers.SHAPE_RELIEF)])
             setOnCheckedChangeListener { _, id -> prefs.edit().putInt(Layers.KEY_SHAPE, shapes.indexOf(id)).apply() }
