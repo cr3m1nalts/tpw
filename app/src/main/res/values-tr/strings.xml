@@ -40,6 +40,8 @@
     <string name="clock_style_classic">Klasik</string>
     <string name="clock_style_frosted">Buzlu cam</string>
     <string name="clock_style_liquid">Sıvı cam</string>
+    <string name="clock_font_bold">Kalın rakamlar</string>
+    <string name="clock_font_tall">Uzun ince rakamlar</string>
     <string name="clock_layout_horizontal">Yatay</string>
     <string name="clock_layout_vertical">Dikey</string>
     <string name="clock_edit">Saati taşı ve boyutlandır</string>

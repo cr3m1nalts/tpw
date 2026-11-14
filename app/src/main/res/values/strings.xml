@@ -40,6 +40,8 @@
     <string name="clock_style_classic">Classic</string>
     <string name="clock_style_frosted">Frosted glass</string>
     <string name="clock_style_liquid">Liquid glass</string>
+    <string name="clock_font_bold">Bold digits</string>
+    <string name="clock_font_tall">Tall, thin digits</string>
     <string name="clock_layout_horizontal">Horizontal</string>
     <string name="clock_layout_vertical">Vertical</string>
     <string name="clock_edit">Move and resize clock</string>

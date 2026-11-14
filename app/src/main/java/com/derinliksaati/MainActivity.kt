@@ -131,6 +131,13 @@ class MainActivity : ComponentActivity() {
             check(depths[prefs.getInt(Layers.KEY_CLOCK_DEPTH, Layers.DEPTH_AUTO)])
             setOnCheckedChangeListener { _, id -> prefs.edit().putInt(Layers.KEY_CLOCK_DEPTH, depths.indexOf(id)).apply() }
         }
+        findViewById<RadioGroup>(R.id.clockFont).apply {
+            check(if (prefs.getInt(Layers.KEY_CLOCK_FONT, Layers.FONT_BOLD) == Layers.FONT_TALL) R.id.fontTall else R.id.fontBold)
+            setOnCheckedChangeListener { _, id ->
+                prefs.edit().putInt(Layers.KEY_CLOCK_FONT, if (id == R.id.fontTall) Layers.FONT_TALL else Layers.FONT_BOLD).apply()
+                Layers.clearClockBox(this@MainActivity) // the two fonts have different shapes, like the layouts below
+            }
+        }
         findViewById<RadioGroup>(R.id.clockLayout).apply {
             check(if (prefs.getBoolean(Layers.KEY_CLOCK_VERTICAL, false)) R.id.layoutVertical else R.id.layoutHorizontal)
             setOnCheckedChangeListener { _, id ->

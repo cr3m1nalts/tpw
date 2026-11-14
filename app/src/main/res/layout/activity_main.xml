@@ -263,6 +263,27 @@
         </RadioGroup>
 
         <RadioGroup
+            android:id="@+id/clockFont"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/fontBold"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/clock_font_bold" />
+
+            <RadioButton
+                android:id="@+id/fontTall"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/clock_font_tall" />
+        </RadioGroup>
+
+        <RadioGroup
             android:id="@+id/clockLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

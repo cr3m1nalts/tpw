@@ -35,6 +35,9 @@ object Layers {
     const val KEY_DEPTH = "depth"            // 0..100: share of MAX_VIEW_DEG
     const val KEY_CLOCK_STYLE = "clockStyle"       // STYLE_*
     const val KEY_CLOCK_VERTICAL = "clockVertical" // true: hours above minutes
+    const val KEY_CLOCK_FONT = "clockFont"         // FONT_*
+    const val FONT_BOLD = 0
+    const val FONT_TALL = 1 // tall, thin digits with round ends
     // The clock's box as shares of the screen; unset = the default box.
     const val KEY_CLOCK_L = "clockL"
     const val KEY_CLOCK_T = "clockT"
