@@ -78,6 +78,7 @@ class MainActivity : ComponentActivity() {
         findViewById<Button>(R.id.frameEdit).setOnClickListener { startActivity(Intent(this, FrameEditActivity::class.java)) }
         findViewById<Button>(R.id.clockEdit).setOnClickListener { startActivity(Intent(this, ClockEditActivity::class.java)) }
         findViewById<Button>(R.id.clockHelp).setOnClickListener { showClockHint() }
+        findViewById<Button>(R.id.licenses).setOnClickListener { showLicenses() }
         batteryButton.setOnClickListener { requestBatteryExemption() }
         updateStatus()
 
@@ -214,6 +215,25 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /** The app's and its parts' licenses; Apache-2.0 requires a copy to go with the bundled models. */
+    private fun showLicenses() {
+        val raw = resources.openRawResource(R.raw.licenses).bufferedReader().use { it.readLines() }
+        // The file is wrapped at 80 columns; rejoin those lines so the dialog wraps them to the phone's width instead.
+        val text = StringBuilder()
+        var prev = ""
+        for (line in raw) {
+            val trimmed = line.trim()
+            if (prev.length >= WRAPPED && trimmed.isNotEmpty() && !trimmed.startsWith('—')) text.append(' ') else if (text.isNotEmpty()) text.append('\n')
+            text.append(trimmed)
+            prev = line.trimEnd()
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.licenses)
+            .setMessage(text)
+            .setPositiveButton(R.string.ok, null)
+            .show()
+    }
+
     private fun showClockHint() {
         AlertDialog.Builder(this)
             .setTitle(R.string.clock_hint_title)
@@ -235,5 +255,6 @@ class MainActivity : ComponentActivity() {
 
     private companion object {
         const val TAG = "DerinlikSaati"
+        const val WRAPPED = 60 // a licenses.txt line this long was wrapped mid-paragraph
     }
 }

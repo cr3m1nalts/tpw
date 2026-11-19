@@ -35,8 +35,14 @@ internet permission.
 
 Galaxy A56, Android 17, One UI 9. Other devices are untested.
 
+## License
+
+TPW is released under the [MIT License](LICENSE). The bundled models and libraries
+keep their own licenses, listed below; the app shows their full texts under
+**Licenses** at the bottom of its main screen.
+
 ## Credits
 
 - [LaMa-Dilated](https://huggingface.co/qualcomm/LaMa-Dilated) inpainting model, Apache-2.0
-- [Depth Anything V2 Small](https://huggingface.co/depth-anything/Depth-Anything-V2-Small) depth model, Apache-2.0, via [Qualcomm AI Hub](https://huggingface.co/qualcomm/Depth-Anything-V2) (MIT)
+- [Depth Anything V2 Small](https://huggingface.co/depth-anything/Depth-Anything-V2-Small) depth model, Apache-2.0, via [Qualcomm AI Hub](https://huggingface.co/qualcomm/Depth-Anything-V2) ([AI Hub Models](https://github.com/qualcomm/ai-hub-models), BSD-3-Clause)
 - ML Kit Selfie Segmentation and LiteRT by Google

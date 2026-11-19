@@ -17,6 +17,8 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "0.1"
+        // Only 64-bit ARM phones: the other CPU types' native libraries added about 68 MB that no target phone used.
+        ndk { abiFilters += "arm64-v8a" }
     }
 
     // Key and password stay outside the repository. Without them, release builds come out unsigned.
