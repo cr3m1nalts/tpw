@@ -63,4 +63,6 @@
     <string name="motion_window">Window</string>
     <string name="shape_depth">Depth</string>
     <string name="bg_depth_label">Background depth</string>
+    <string name="top_blur_label">Top blur</string>
+    <string name="top_blur_off">Off</string>
 </resources>

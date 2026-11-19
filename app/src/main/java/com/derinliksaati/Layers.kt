@@ -63,6 +63,7 @@ object Layers {
     const val SHAPE_DEPTH = 2
     const val KEY_BG_DEPTH = "bgDepth" // 0..100, 0 = background moves as one flat picture
     const val DEFAULT_BG_DEPTH = 50
+    const val KEY_TOP_BLUR = "topBlur" // 0..100: how blurred the top of the background is, 0 = off
     const val STYLE_CLASSIC = 0
     const val STYLE_FROSTED = 1
     const val STYLE_LIQUID = 2

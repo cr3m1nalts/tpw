@@ -69,6 +69,7 @@ class MainActivity : ComponentActivity() {
         bindSlider(R.id.volume, R.id.volumeValue, Layers.KEY_VOLUME, Layers.DEFAULT_VOLUME) { "%$it" }
         bindSlider(R.id.subjectTurn, R.id.subjectTurnValue, Layers.KEY_SUBJECT_TURN, Layers.DEFAULT_SUBJECT_TURN) { "%$it" }
         bindSlider(R.id.bgDepth, R.id.bgDepthValue, Layers.KEY_BG_DEPTH, Layers.DEFAULT_BG_DEPTH) { "%$it" }
+        bindSlider(R.id.topBlur, R.id.topBlurValue, Layers.KEY_TOP_BLUR, 0) { if (it == 0) getString(R.string.top_blur_off) else "%$it" }
         bindSlider(R.id.clockAlpha, R.id.clockAlphaValue, Layers.KEY_CLOCK_ALPHA, Layers.DEFAULT_CLOCK_ALPHA) { "%$it" }
         bindClockChoices()
         bindCheck(R.id.clockTilt, Layers.KEY_CLOCK_TILT, true)

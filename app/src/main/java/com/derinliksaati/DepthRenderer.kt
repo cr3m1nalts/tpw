@@ -5,9 +5,13 @@ import android.graphics.Bitmap
 import android.graphics.Camera
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.LinearGradient
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import android.graphics.RectF
+import android.graphics.Shader
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -62,6 +66,12 @@ class DepthRenderer(private val context: Context) {
     private val bgOnScreen = RectF()
     private val bgView = Matrix() // how the background is placed on screen in this frame
     private var blur: Bitmap? = null
+    private var topBlurSource: Bitmap? = null
+    private var topBlurBase: Bitmap? = null // small readable copy of the background that the top blur is made from
+    private var topBlur: Bitmap? = null
+    private var topBlurLevel = -1
+    private var fadeHeight = 0f
+    private val fadePaint = Paint().apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN) }
 
     /** Reloads the picture layers if the app saved new ones. */
     fun loadIfChanged() {
@@ -83,6 +93,31 @@ class DepthRenderer(private val context: Context) {
     private fun blurOf(bg: Bitmap): Bitmap {
         val small = Bitmap.createScaledBitmap(bg.copy(Bitmap.Config.ARGB_8888, false), max(1, bg.width / 32), max(1, bg.height / 32), true)
         return Bitmap.createScaledBitmap(small, max(1, bg.width / 8), max(1, bg.height / 8), true)
+    }
+
+    /**
+     * The background blurred by the user's top blur level, or null when that is off. Halving step by step and
+     * then doubling back gives a smooth blur; the level sets how small it gets on the way.
+     */
+    private fun topBlurOf(bg: Bitmap): Bitmap? {
+        val level = prefs.getInt(Layers.KEY_TOP_BLUR, 0)
+        if (level <= 0) return null
+        if (topBlurSource !== bg) {
+            topBlurSource = bg
+            topBlurLevel = -1
+            topBlurBase = Bitmap.createScaledBitmap(bg.copy(Bitmap.Config.ARGB_8888, false), max(1, bg.width / 4), max(1, bg.height / 4), true)
+        }
+        val base = topBlurBase ?: return null
+        if (level != topBlurLevel) {
+            topBlurLevel = level
+            val smallest = max(2f, base.width / (1 + level * TOP_BLUR_MAX / 100f))
+            var b = base
+            while (b.width / 2 >= smallest) b = Bitmap.createScaledBitmap(b, max(1, b.width / 2), max(1, b.height / 2), true)
+            b = Bitmap.createScaledBitmap(b, smallest.roundToInt(), max(1, (smallest * base.height / base.width).roundToInt()), true)
+            while (b.width * 2 <= base.width) b = Bitmap.createScaledBitmap(b, b.width * 2, b.height * 2, true)
+            topBlur = b
+        }
+        return topBlur
     }
 
     /** The clock's box on a w×h screen. */
@@ -210,6 +245,26 @@ class DepthRenderer(private val context: Context) {
             c.concat(bgView)
             c.scale(s, s, w / 2, h / 2)
             c.drawBitmap(bg, null, dst, layerPaint)
+            c.restore()
+        }
+        topBlurOf(bg)?.let { soft ->
+            // A blurred copy over the sharp background, fading out downwards. The object is drawn later, so it stays sharp.
+            val end = h * TOP_BLUR_END
+            c.saveLayer(0f, 0f, w, end, null)
+            if (bgNear != null) {
+                c.drawBitmapMesh(soft, MESH_X, MESH_Y, mesh, 0, null, 0, layerPaint) // the mesh the background just used
+            } else {
+                c.save()
+                c.concat(bgView)
+                c.scale(s, s, w / 2, h / 2)
+                c.drawBitmap(soft, null, dst, layerPaint)
+                c.restore()
+            }
+            if (fadeHeight != h) {
+                fadeHeight = h
+                fadePaint.shader = LinearGradient(0f, h * TOP_BLUR_START, 0f, end, Color.BLACK, Color.TRANSPARENT, Shader.TileMode.CLAMP)
+            }
+            c.drawRect(0f, 0f, w, end, fadePaint)
             c.restore()
         }
         // The clock moves with the plane it sits on: the background's when behind the object, the object's when in front.
@@ -532,6 +587,10 @@ class DepthRenderer(private val context: Context) {
         const val BG_SHIFT_GAIN = 1.5f
         /** Extra zoom at full background depth, so parts that move more still keep the screen edges covered. */
         const val BG_MARGIN = 0.08f
+        // Top blur: fully blurred down to START of the screen height, fading to sharp at END.
+        const val TOP_BLUR_START = 0.28f
+        const val TOP_BLUR_END = 0.62f
+        const val TOP_BLUR_MAX = 14f // at 100 % the blur goes down to 1/15 of an already quarter-size copy
         const val FILL_PASSES = 300
         const val SOFTEN_PASSES = 2
         /** Largest background shift in Slide mode, as a share of the screen, at full effect strength. */
